@@ -3,7 +3,7 @@
 나이와 IQ를 입력하면 **39문항 중 몇 개를 틀렸는지** 역산하는 도구입니다.
 
 - 저장소: https://github.com/aoharu11/iq-predictor
-- 웹사이트: https://aoharu11.github.io/iq-predictor/ *(GitHub Pages 활성화 후)*
+- 웹사이트: https://aoharu11.github.io/iq-predictor/
 
 > 이 문서는 단순 사용법이 아니라, **예측 모델의 수학적 정의와 작동 원리**를 정리한 문서입니다.
 
@@ -337,7 +337,7 @@ git commit -m "Update model and docs"
 git push
 ```
 
-GitHub Pages가 켜져 있으면 1~2분 뒤 자동 반영됩니다.
+GitHub Pages가 켜져 있으면 1~2분 뒤 자동 반영됩니다. (현재 켜져 있으며 위 주소에서 서비스 중입니다.)
 
 ---
 

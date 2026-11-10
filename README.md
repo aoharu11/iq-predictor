@@ -97,7 +97,7 @@ $$
 `145이상`으로 관측된 나이 집합은 따로 둡니다.
 
 $$
-\mathcal{C}_W=\{a:\text{관측값이 } \mathrm{CEIL}\}
+\mathcal{C}_W=\{a:\ \text{observed value at } a \text{ is CEIL}\}
 $$
 
 천장이 시작되는 가장 이른 나이는 다음과 같습니다.
@@ -127,7 +127,7 @@ $$
 $$
 v(A,W)=
 \begin{cases}
-\mathrm{Interp}_A(\mathcal{A}_W), & 1\le W\le 10,\\[6pt]
+\mathrm{Interp}_A(\mathcal{A}_W), & 1\le W\le 10,\\
 v(A,10)+k\bigl[v(A,10)-v(A,9)\bigr](W-10), & W>10.
 \end{cases}
 $$
@@ -135,9 +135,9 @@ $$
 $$
 \widehat{\mathrm{IQ}}(A,W)=
 \begin{cases}
-\mathrm{CEIL}, & W=0,\\[4pt]
-\mathrm{CEIL}, & 1\le W\le 10 \ \text{and}\ A\ge a_W^{\mathrm{ceil}},\\[4pt]
-\mathrm{CEIL}, & v(A,W)\ge 144.5,\\[4pt]
+\mathrm{CEIL}, & W=0,\\
+\mathrm{CEIL}, & 1\le W\le 10 \ \text{and}\ A\ge a_W^{\mathrm{ceil}},\\
+\mathrm{CEIL}, & v(A,W)\ge 144.5,\\
 \left\lfloor v(A,W)+\tfrac12\right\rfloor, & \text{otherwise}.
 \end{cases}
 $$
@@ -380,8 +380,9 @@ web/                       # 배포 폴더
 
 ## 참고: 모델 요약
 
+**전방 함수 (나이, 오답 → IQ)**
+
 $$
-\boxed{
 \widehat{\mathrm{IQ}}(A,W)=
 \begin{cases}
 \mathrm{CEIL}, & W=0\\
@@ -389,8 +390,9 @@ $$
 \mathrm{CEIL}, & v(A,W)\ge 144.5\\
 \lfloor v(A,W)+0.5\rfloor, & \text{otherwise}
 \end{cases}
-}
 $$
+
+**오답별 기준값 (나이 방향 보간 + 저IQ 보정)**
 
 $$
 v(A,W)=

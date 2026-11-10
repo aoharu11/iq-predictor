@@ -95,7 +95,7 @@ tools\멘사_IQ_오답예측기.bat
 |---|---|---:|
 | 기준표 | 14개 나이 × 11개 오답 (0~10) | 154 |
 | 보정표 | 중간 나이 14개의 일부 오답 | 39 |
-| 추가검증 | 16세 1개, 44세 2개, 24세 15개 | 3 |
+| 추가검증 | 16세(오답 1개), 44세(오답 2개), 24세(오답 15개) 각 1칸 | 3 |
 | **합계** | | **196** |
 
 실측이 있는 나이는 다음과 같습니다.
@@ -142,10 +142,14 @@ $$
 \mathcal{C}_W=\{a:\ \text{observed value at } a \text{ is CEIL}\}
 $$
 
-천장이 시작되는 가장 이른 나이는 다음과 같습니다.
+천장이 시작되는 가장 이른 나이는 다음과 같습니다. $\mathcal{C}_W$가 비어 있으면(관측된 `145이상`이 없으면) 천장 나이는 무한대로 두어, 아래 4.4절의 천장 조건이 발동하지 않게 합니다.
 
 $$
-a_W^{\mathrm{ceil}}=\min\mathcal{C}_W
+a_W^{\mathrm{ceil}}=
+\begin{cases}
+\min\mathcal{C}_W, & \mathcal{C}_W\neq\varnothing,\\
+\infty, & \mathcal{C}_W=\varnothing.
+\end{cases}
 $$
 
 ### 4.3 나이 방향 선형 보간
@@ -187,6 +191,8 @@ $$
 \left\lfloor v(A,W)+\tfrac12\right\rfloor, & \text{otherwise}.
 \end{cases}
 $$
+
+위 조건은 **맨 위에서부터 순서대로 평가하며, 처음 만족하는 조건 하나만 적용**합니다(First-match).
 
 - $W=0$은 항상 `145이상`입니다.
 - $W\le 10$에서는 관측된 천장 나이 $a_W^{\mathrm{ceil}}$를 넘으면 `145이상`입니다.
@@ -239,6 +245,8 @@ $$
 v(A,W)=v(A,10)+0.60\bigl(v(A,10)-v(A,9)\bigr)(W-10)
 $$
 
+여기서 $v(A,10)<v(A,9)$이므로 기울기 항 $v(A,10)-v(A,9)$는 **음수**입니다. 따라서 $W$가 커질수록 IQ는 감소합니다.
+
 이 보정으로 `24세 15개 → 98`이 정확히 재현됩니다.
 
 ---
@@ -269,7 +277,7 @@ $$
 - 비어 있으면 가장 가까운 값을 반환합니다.
 
 $$
-W^\star=\arg\min_{0\le W<39}\left|\widehat{\mathrm{IQ}}(A,W)-T\right|
+W^\star=\arg\min_{0\le W\le 39}\left|\widehat{\mathrm{IQ}}(A,W)-T\right|
 $$
 
 이때는 결과에 `근사값`으로 표시됩니다.
@@ -418,7 +426,7 @@ $$
 $$
 v(A,W)=
 \begin{cases}
-\mathrm{Interp}_A(\mathcal{A}_W), & W\le 10\\
+\mathrm{Interp}_A(\mathcal{A}_W), & 1\le W\le 10\\
 v(A,10)+0.60\,\bigl(v(A,10)-v(A,9)\bigr)(W-10), & W>10
 \end{cases}
 $$

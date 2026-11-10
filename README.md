@@ -309,10 +309,11 @@ $$
 ### 배치파일
 
 ```
-멘사_IQ_오답예측기.bat
+tools\멘사_IQ_오답예측기.bat
 ```
 
-같은 모델을 Python으로 실행합니다. 실행하면 기준표/보정표/추가검증 자동 검증 결과가 먼저 표시됩니다.
+같은 모델을 Python으로 실행합니다. 실측 데이터가 파일 안에 포함되어 있어 별도 데이터 파일 없이 동작합니다.
+실행하면 기준표/보정표/추가검증 자동 검증 결과가 먼저 표시됩니다.
 
 ---
 
@@ -320,19 +321,20 @@ $$
 
 ### 데이터 갱신
 
+저장소 루트에서:
+
 ```bat
-python 웹사이트_생성.py
-python 그래프_생성.py
+python tools\웹사이트_생성.py
 ```
 
-- `웹사이트_생성.py`: 원본 `.bat`과 CSV에서 데이터를 읽어 `web/index.html` 안에 넣습니다.
-- `그래프_생성.py`: 같은 모델로 `web/assets/`의 그래프 3장을 다시 그립니다.
+- `tools\멘사_IQ_오답예측기.bat`이 모델의 원본입니다.
+- `tools\웹사이트_생성.py`가 그 파일의 모델 데이터를 읽어 `index.html` 안에 넣습니다.
+- 그래프(`assets/`)는 모델 결과를 시각화한 정적 이미지입니다.
 
 ### 배포
 
 ```powershell
-cd web
-git add index.html README.md assets
+git add index.html README.md assets tools .gitignore
 git commit -m "Update model and docs"
 git push
 ```
@@ -343,8 +345,6 @@ GitHub Pages가 켜져 있으면 1~2분 뒤 자동 반영됩니다. (현재 켜�
 
 ## 11. 파일 구조
 
-### 저장소 (배포되는 것)
-
 ```
 index.html                 # 화면 + 모델 + 데이터 (파일 1개)
 README.md                  # 이 문서
@@ -352,20 +352,14 @@ assets/
   iq_surface_3d.png        # 3D IQ 표면
   iq_heatmap.png           # 2D 히트맵
   iq_curves.png            # 나이별 IQ 곡선
+tools/
+  멘사_IQ_오답예측기.bat    # 최종 모델 (콘솔 예측기, 데이터 내장)
+  웹사이트_생성.py          # index.html 데이터 주입
+  README.md                # tools 사용법
 .gitignore
 ```
 
-### 원본 모델 (로컬)
-
-```
-멘사_IQ_오답예측기.bat      # 원본 예측기
-iq_matrix_70s_fast.csv     # 기준표 154칸
-iq_gap_validation_32.csv   # 보정표 39칸
-iq_extra_validation.csv    # 추가검증 3칸
-웹사이트_생성.py            # index.html 데이터 주입
-그래프_생성.py              # 그래프 생성
-web/                       # 배포 폴더
-```
+저장소에는 사이트와 최종 모델 코드만 포함합니다.
 
 ---
 

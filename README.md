@@ -128,7 +128,7 @@ $$
 v(A,W)=
 \begin{cases}
 \mathrm{Interp}_A(\mathcal{A}_W), & 1\le W\le 10,\\
-v(A,10)+k\bigl[v(A,10)-v(A,9)\bigr](W-10), & W>10.
+v(A,10)+k\bigl[v(A,10)-v(A,9)\bigr]\,(W-10), & W>10.
 \end{cases}
 $$
 
@@ -188,7 +188,7 @@ $$
 즉 저IQ 구간은 9→10 기울기의 **60%만** 적용합니다.
 
 $$
-v(A,W)=v(A,10)+0.60\bigl[v(A,10)-v(A,9)\bigr](W-10)
+v(A,W)=v(A,10)+0.60\bigl[v(A,10)-v(A,9)\bigr]\,(W-10)
 $$
 
 이 보정으로 `24세 15개 → 98`이 정확히 재현됩니다.
@@ -398,6 +398,6 @@ $$
 v(A,W)=
 \begin{cases}
 \mathrm{Interp}_A(\mathcal{A}_W), & W\le 10\\
-v(A,10)+0.60\,[v(A,10)-v(A,9)](W-10), & W>10
+v(A,10)+0.60\,[v(A,10)-v(A,9)]\,(W-10), & W>10
 \end{cases}
 $$

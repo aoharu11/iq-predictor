@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>멘사 도형테스트 IQ → 오답 수 예측기</title>
+<meta name="description" content="나이와 IQ를 입력하면 39문항 중 몇 개를 틀렸는지 계산합니다.">
+<style>
+  :root{
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --text:#1b2333;
+    --muted:#6b7688;
+    --line:#e3e8f2;
+    --brand:#4f46e5;
+    --brand-soft:#eef0ff;
+    --hit:#eef0ff;
+    --hit-line:#c7ccff;
+    --ok:#0f9d70;
+    --warn:#b45309;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(1200px 600px at 50% -200px, #e6e9ff 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",Roboto,sans-serif;
+    line-height:1.55;
+    min-height:100vh;
+  }
+  main{
+    width:100%;
+    max-width:640px;
+    margin:0 auto;
+    padding:40px 20px 64px;
+  }
+  header{text-align:center;margin-bottom:28px;}
+  .badge{
+    display:inline-block;
+    font-size:12px;
+    font-weight:700;
+    color:var(--brand);
+    background:var(--brand-soft);
+    border:1px solid var(--hit-line);
+    border-radius:999px;
+    padding:4px 12px;
+    margin-bottom:14px;
+  }
+  h1{
+    font-size:clamp(22px,5vw,30px);
+    line-height:1.3;
+    margin:0 0 10px;
+    letter-spacing:-0.02em;
+  }
+  header p{
+    margin:0;
+    color:var(--muted);
+    font-size:14px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:24px;
+    box-shadow:0 12px 40px rgba(24,39,75,0.08);
+  }
+  form{display:grid;gap:16px;}
+  .field{display:grid;gap:6px;}
+  label{font-size:13px;font-weight:700;color:#3a4458;}
+  input{
+    width:100%;
+    padding:13px 14px;
+    font-size:17px;
+    color:var(--text);
+    background:#fbfcff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus{
+    border-color:var(--brand);
+    box-shadow:0 0 0 4px rgba(79,70,229,0.12);
+  }
+  button{
+    width:100%;
+    padding:14px 16px;
+    font-size:16px;
+    font-weight:800;
+    color:#fff;
+    background:linear-gradient(180deg,#5b52f0,#4338ca);
+    border:0;
+    border-radius:12px;
+    cursor:pointer;
+    transition:transform .06s, filter .15s;
+  }
+  button:hover{filter:brightness(1.05);}
+  button:active{transform:translateY(1px);}
+  #result{margin-top:20px;}
+  .result-card{
+    border:1px solid var(--hit-line);
+    background:linear-gradient(180deg,#f7f8ff,#ffffff);
+    border-radius:14px;
+    padding:20px;
+    animation:pop .18s ease-out;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+  .result-head{
+    font-size:13px;
+    font-weight:700;
+    color:var(--brand);
+    margin-bottom:10px;
+  }
+  .big{
+    font-size:34px;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    line-height:1.15;
+  }
+  .big small{font-size:17px;font-weight:800;margin-left:4px;color:#4a4560;}
+  .sub{
+    margin-top:4px;
+    font-size:14px;
+    color:#4a4560;
+    font-weight:600;
+  }
+  .note{
+    margin:12px 0 0;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .note.warn{color:var(--warn);}
+  .error{
+    border:1px solid #f5c2c7;
+    background:#fff5f6;
+    color:#b42318;
+    border-radius:12px;
+    padding:14px 16px;
+    font-size:14px;
+    font-weight:600;
+  }
+  #table-wrap{margin-top:24px;}
+  h2{
+    font-size:15px;
+    margin:0 0 10px;
+    color:#3a4458;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+    overflow:hidden;
+    border-radius:12px;
+    border:1px solid var(--line);
+  }
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);}
+  th{background:#f7f9ff;color:#3a4458;font-size:12px;font-weight:800;}
+  tr:last-child td{border-bottom:0;}
+  td:first-child{font-variant-numeric:tabular-nums;font-weight:700;}
+  td.iq{font-variant-numeric:tabular-nums;font-weight:800;}
+  td.kind{color:var(--muted);font-size:12px;}
+  tr.hit td{background:var(--hit);}
+  tr.hit td:first-child{color:var(--brand);}
+  tr.extra td.kind{color:#9aa3b5;}
+  footer{
+    margin-top:28px;
+    text-align:center;
+    font-size:12px;
+    color:#8b94a6;
+    line-height:1.7;
+  }
+  footer strong{color:#6b7688;}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="badge" id="badge">실측 데이터 기반</div>
+    <h1>멘사 도형테스트<br>IQ → 오답 수 예측기</h1>
+    <p>나이와 사이트에서 나온 IQ를 입력하면, 39문항 중 몇 개를 틀렸는지 계산합니다.</p>
+  </header>
+
+  <section class="card">
+    <form id="calc-form" autocomplete="off" novalidate>
+      <div class="field">
+        <label for="age">나이</label>
+        <input id="age" name="age" type="number" inputmode="numeric" min="1" max="120" placeholder="24">
+      </div>
+      <div class="field">
+        <label for="iq">사이트에서 나온 IQ</label>
+        <input id="iq" name="iq" type="text" inputmode="text" placeholder="138">
+      </div>
+      <button type="submit">계산하기</button>
+    </form>
+    <section id="result" aria-live="polite"></section>
+  </section>
+
+  <section id="table-wrap" hidden>
+    <h2>이 나이의 오답별 IQ</h2>
+    <table>
+      <thead>
+        <tr><th>틀린 개수</th><th>IQ</th><th>구분</th></tr>
+      </thead>
+      <tbody id="iq-body"></tbody>
+    </table>
+  </section>
+
+  <footer>
+    <div><strong>입력값은 서버로 전송되지 않습니다.</strong> 모든 계산은 브라우저에서 이루어집니다.</div>
+    <div>공식 서비스가 아니며, 수집된 실측 데이터를 바탕으로 한 추정 도구입니다.</div>
+  </footer>
+</main>
+
+<script>
+/*__MODEL_DATA_START__*/
+window.IQ_MODEL = {
+  "N_ITEMS": 39,
+  "CEIL_TEXT": "145이상",
+  "CEIL_MIN": 144.5,
+  "LOW_K": 0.6,
+  "BASE": {
+    "15": [
+      null,
+      144,
+      139,
+      136,
+      131,
+      129,
+      126,
+      122,
+      118,
+      114,
+      111
+    ],
+    "18": [
+      null,
+      142,
+      137,
+      134,
+      129,
+      127,
+      124,
+      120,
+      116,
+      112,
+      109
+    ],
+    "21": [
+      null,
+      139,
+      134,
+      131,
+      126,
+      124,
+      122,
+      118,
+      114,
+      110,
+      107
+    ],
+    "24": [
+      null,
+      138,
+      134,
+      131,
+      126,
+      124,
+      121,
+      117,
+      113,
+      110,
+      107
+    ],
+    "28": [
+      null,
+      140,
+      135,
+      132,
+      128,
+      126,
+      123,
+      119,
+      115,
+      111,
+      108
+    ],
+    "33": [
+      null,
+      143,
+      138,
+      135,
+      130,
+      128,
+      125,
+      121,
+      117,
+      113,
+      110
+    ],
+    "38": [
+      null,
+      144,
+      139,
+      136,
+      131,
+      129,
+      126,
+      122,
+      118,
+      114,
+      111
+    ],
+    "43": [
+      null,
+      null,
+      143,
+      140,
+      135,
+      133,
+      130,
+      126,
+      122,
+      118,
+      114
+    ],
+    "48": [
+      null,
+      null,
+      null,
+      null,
+      140,
+      138,
+      134,
+      130,
+      126,
+      122,
+      119
+    ],
+    "53": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      143,
+      139,
+      135,
+      131,
+      126,
+      123
+    ],
+    "58": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      140,
+      136,
+      131,
+      128
+    ],
+    "63": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      143,
+      139,
+      134,
+      131
+    ],
+    "68": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      140,
+      135,
+      132
+    ],
+    "73": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      142,
+      137,
+      133
+    ]
+  },
+  "GAP": [
+    [
+      22,
+      4,
+      125
+    ],
+    [
+      22,
+      1,
+      138
+    ],
+    [
+      23,
+      1,
+      138
+    ],
+    [
+      22,
+      2,
+      133
+    ],
+    [
+      23,
+      2,
+      133
+    ],
+    [
+      23,
+      3,
+      130
+    ],
+    [
+      23,
+      5,
+      124
+    ],
+    [
+      25,
+      1,
+      139
+    ],
+    [
+      25,
+      2,
+      134
+    ],
+    [
+      26,
+      2,
+      134
+    ],
+    [
+      26,
+      3,
+      132
+    ],
+    [
+      27,
+      2,
+      135
+    ],
+    [
+      25,
+      4,
+      126
+    ],
+    [
+      27,
+      3,
+      132
+    ],
+    [
+      27,
+      5,
+      125
+    ],
+    [
+      26,
+      5,
+      125
+    ],
+    [
+      30,
+      2,
+      136
+    ],
+    [
+      30,
+      4,
+      128
+    ],
+    [
+      35,
+      2,
+      138
+    ],
+    [
+      35,
+      3,
+      135
+    ],
+    [
+      35,
+      4,
+      131
+    ],
+    [
+      35,
+      6,
+      126
+    ],
+    [
+      40,
+      1,
+      null
+    ],
+    [
+      40,
+      2,
+      140
+    ],
+    [
+      45,
+      2,
+      null
+    ],
+    [
+      40,
+      4,
+      132
+    ],
+    [
+      45,
+      3,
+      142
+    ],
+    [
+      45,
+      5,
+      135
+    ],
+    [
+      50,
+      3,
+      null
+    ],
+    [
+      50,
+      4,
+      142
+    ],
+    [
+      50,
+      6,
+      136
+    ],
+    [
+      55,
+      4,
+      null
+    ],
+    [
+      55,
+      5,
+      null
+    ],
+    [
+      65,
+      6,
+      null
+    ],
+    [
+      60,
+      6,
+      null
+    ],
+    [
+      60,
+      7,
+      142
+    ],
+    [
+      70,
+      7,
+      null
+    ],
+    [
+      70,
+      8,
+      142
+    ],
+    [
+      65,
+      7,
+      144
+    ]
+  ],
+  "EXTRA": [
+    [
+      16,
+      1,
+      143
+    ],
+    [
+      44,
+      2,
+      144
+    ],
+    [
+      24,
+      15,
+      98
+    ]
+  ]
+};
+/*__MODEL_DATA_END__*/
+</script>
+<script>
+(function () {
+  "use strict";
+
+  var M = window.IQ_MODEL;
+  var resultEl = document.getElementById("result");
+  var tableWrap = document.getElementById("table-wrap");
+  var tableBody = document.getElementById("iq-body");
+  var badge = document.getElementById("badge");
+
+  if (!M) {
+    resultEl.innerHTML = '<div class="error">모델 데이터를 불러오지 못했습니다. model_data.js 파일이 같은 폴더에 있는지 확인해 주세요.</div>';
+    return;
+  }
+
+  var N_ITEMS = M.N_ITEMS;
+  var CEIL_TEXT = M.CEIL_TEXT;
+  var CEIL_MIN = M.CEIL_MIN;
+  var LOW_K = M.LOW_K;
+
+  var NUM = {};   // NUM[wrong][age] = iq
+  var CEIL = {};  // CEIL[wrong] = Set(age)
+
+  function addPoint(age, wrong, val) {
+    if (val === null || val === undefined) {
+      if (!CEIL[wrong]) CEIL[wrong] = new Set();
+      if (NUM[wrong]) delete NUM[wrong][age];
+      CEIL[wrong].add(age);
+    } else {
+      if (!NUM[wrong]) NUM[wrong] = {};
+      if (CEIL[wrong]) CEIL[wrong].delete(age);
+      NUM[wrong][age] = val;
+    }
+  }
+
+  Object.keys(M.BASE).forEach(function (ageStr) {
+    var age = Number(ageStr);
+    M.BASE[ageStr].forEach(function (v, w) { addPoint(age, w, v); });
+  });
+  M.GAP.forEach(function (r) { addPoint(r[0], r[1], r[2]); });
+  M.EXTRA.forEach(function (r) {
+    // 오답 10개 이하만 일반 앵커. 11개 이상은 저IQ 배율 보정용.
+    if (r[1] <= 10) addPoint(r[0], r[1], r[2]);
+  });
+
+  var MAX_W = Math.max.apply(
+    null,
+    Object.keys(NUM).map(Number).concat(Object.keys(CEIL).map(Number))
+  );
+
+  var CEIL_AGE = {};
+  Object.keys(CEIL).forEach(function (w) {
+    var arr = Array.from(CEIL[w]);
+    if (arr.length) CEIL_AGE[w] = Math.min.apply(null, arr);
+  });
+
+  function points(wrong) {
+    var obj = NUM[wrong] || {};
+    return Object.keys(obj)
+      .map(function (a) { return [Number(a), obj[a]]; })
+      .sort(function (p, q) { return p[0] - q[0]; });
+  }
+
+  function numericValue(age, wrong) {
+    var pts = points(wrong);
+    if (!pts.length) return null;
+    if (pts.length === 1) return pts[0][1];
+
+    if (age <= pts[0][0]) {
+      var a1 = pts[0][0], v1 = pts[0][1], a2 = pts[1][0], v2 = pts[1][1];
+      return v1 + (v2 - v1) * (age - a1) / (a2 - a1);
+    }
+    var last = pts.length - 1;
+    if (age >= pts[last][0]) {
+      var b1 = pts[last - 1][0], w1 = pts[last - 1][1];
+      var b2 = pts[last][0], w2 = pts[last][1];
+      return w2 + (w2 - w1) * (age - b2) / (b2 - b1);
+    }
+    for (var i = 0; i < pts.length - 1; i++) {
+      var c1 = pts[i][0], x1 = pts[i][1], c2 = pts[i + 1][0], x2 = pts[i + 1][1];
+      if (c1 <= age && age <= c2) {
+        if (c1 === c2) return x1;
+        return x1 + (x2 - x1) * (age - c1) / (c2 - c1);
+      }
+    }
+    return pts[last][1];
+  }
+
+  function iqAt(age, wrong) {
+    if (wrong === 0) return CEIL_TEXT;
+
+    var v;
+    if (wrong > MAX_W) {
+      var v9 = numericValue(age, MAX_W - 1);
+      var v10 = numericValue(age, MAX_W);
+      if (v9 === null || v10 === null) return CEIL_TEXT;
+      v = v10 + (v10 - v9) * LOW_K * (wrong - MAX_W);
+    } else {
+      var ceilAge = CEIL_AGE[wrong];
+      if (ceilAge !== undefined && age >= ceilAge) return CEIL_TEXT;
+      v = numericValue(age, wrong);
+    }
+
+    if (v === null) return CEIL_TEXT;
+    if (v >= CEIL_MIN) return CEIL_TEXT;
+    return Math.floor(v + 0.5);
+  }
+
+  function parseIQ(text) {
+    var s = String(text).trim().replace(/\s/g, "");
+    if (!s) throw new Error("empty");
+    if (s.indexOf("이상") !== -1 || s.charAt(s.length - 1) === "+") return null;
+    var v = Math.trunc(parseFloat(s.replace(/\+/g, "")));
+    if (isNaN(v)) throw new Error("nan");
+    return v >= 145 ? null : v;
+  }
+
+  function predict(age, text) {
+    var target = parseIQ(text);
+
+    if (target === null) {
+      var maxW = 0;
+      for (var w = 0; w <= MAX_W; w++) {
+        if (iqAt(age, w) === CEIL_TEXT) maxW = w;
+        else break;
+      }
+      return {
+        status: "ceiling",
+        wrongMin: 0,
+        wrongMax: maxW,
+        correctMin: N_ITEMS - maxW,
+        correctMax: N_ITEMS
+      };
+    }
+
+    var exact = [];
+    var bestW = 0;
+    var bestDiff = Infinity;
+    for (var k = 0; k < N_ITEMS; k++) {
+      var iq = iqAt(age, k);
+      if (iq === CEIL_TEXT) continue;
+      var d = Math.abs(iq - target);
+      if (d === 0) exact.push(k);
+      if (d < bestDiff) { bestDiff = d; bestW = k; }
+    }
+
+    if (exact.length) {
+      return {
+        status: exact.length === 1 ? "exact" : "range",
+        wrongMin: exact[0],
+        wrongMax: exact[exact.length - 1],
+        correctMin: N_ITEMS - exact[exact.length - 1],
+        correctMax: N_ITEMS - exact[0]
+      };
+    }
+    return {
+      status: "approx",
+      wrongMin: bestW,
+      wrongMax: bestW,
+      correctMin: N_ITEMS - bestW,
+      correctMax: N_ITEMS - bestW,
+      diff: bestDiff
+    };
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function measured(age, wrong) {
+    if (NUM[wrong] && Object.prototype.hasOwnProperty.call(NUM[wrong], age)) return true;
+    if (CEIL[wrong] && CEIL[wrong].has(age)) return true;
+    return false;
+  }
+
+  function kindOf(age, wrong) {
+    if (wrong === 0) return "고정";
+    if (wrong > MAX_W) return "외삽";
+    if (measured(age, wrong)) return "실측";
+    return "보간";
+  }
+
+  function pct(wrong) {
+    return ((N_ITEMS - wrong) / N_ITEMS * 100).toFixed(1);
+  }
+
+  function showError(msg) {
+    resultEl.innerHTML = '<div class="error">' + escapeHtml(msg) + '</div>';
+  }
+
+  function render(age, iqText, res) {
+    var html = [];
+    html.push('<div class="result-card">');
+    html.push('<div class="result-head">만 ' + age + '세 · 표기 IQ ' + escapeHtml(iqText) + '</div>');
+
+    if (res.status === "ceiling") {
+      if (res.wrongMax === 0) {
+        html.push('<div class="big">0개</div>');
+        html.push('<div class="sub">맞은 개수 39개 / 39개 · 정답률 100%</div>');
+        html.push('<p class="note">만 ' + age + '세는 1개도 틀리지 않아야 145이상이 나옵니다.</p>');
+      } else {
+        html.push('<div class="big">0 ~ ' + res.wrongMax + '개<small>허용</small></div>');
+        html.push('<div class="sub">맞은 개수 ' + res.correctMin + ' ~ ' + res.correctMax + '개</div>');
+        html.push('<p class="note">만 ' + age + '세는 최대 ' + res.wrongMax + '개까지 틀려도 145이상이 나옵니다.</p>');
+      }
+    } else if (res.wrongMin === res.wrongMax) {
+      var w = res.wrongMin;
+      html.push('<div class="big">' + w + '개<small>틀림</small></div>');
+      html.push('<div class="sub">맞은 개수 ' + (N_ITEMS - w) + '개 / ' + N_ITEMS + '개 · 정답률 ' + pct(w) + '%</div>');
+      if (res.status === "approx") {
+        html.push('<p class="note warn">표에 정확히 일치하는 칸이 없어 가장 가까운 값입니다. (예상 IQ 차이 ' + res.diff + '점)</p>');
+      } else {
+        html.push('<p class="note">입력한 IQ와 정확히 일치하는 칸입니다.</p>');
+      }
+    } else {
+      html.push('<div class="big">' + res.wrongMin + ' ~ ' + res.wrongMax + '개<small>틀림</small></div>');
+      html.push('<div class="sub">맞은 개수 ' + res.correctMin + ' ~ ' + res.correctMax + '개</div>');
+      html.push('<p class="note">반올림 때문에 ' + res.wrongMin + '~' + res.wrongMax + '개가 같은 IQ로 표시됩니다.</p>');
+    }
+
+    html.push('</div>');
+    resultEl.innerHTML = html.join("");
+
+    var rows = [];
+    for (var k = 0; k <= 20; k++) {
+      var iq = iqAt(age, k);
+      var hit = false;
+      if (res.status === "ceiling") {
+        hit = k <= res.wrongMax;
+      } else {
+        hit = k >= res.wrongMin && k <= res.wrongMax;
+      }
+      rows.push(
+        '<tr class="' + (hit ? "hit" : "") + (k > MAX_W ? " extrap" : "") + '">' +
+        '<td>' + k + '개</td>' +
+        '<td class="iq">' + iq + '</td>' +
+        '<td class="kind">' + kindOf(age, k) + '</td>' +
+        '</tr>'
+      );
+    }
+    tableBody.innerHTML = rows.join("");
+    tableWrap.hidden = false;
+  }
+
+  document.getElementById("calc-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    var ageRaw = document.getElementById("age").value.trim();
+    var iqRaw = document.getElementById("iq").value.trim();
+    resultEl.innerHTML = "";
+    tableWrap.hidden = true;
+
+    if (!/^\d+$/.test(ageRaw)) {
+      showError("나이는 숫자로 입력해 주세요.");
+      return;
+    }
+    var age = Number(ageRaw);
+    if (age < 1 || age > 120) {
+      showError("나이는 1~120 사이로 입력해 주세요.");
+      return;
+    }
+    if (!iqRaw) {
+      showError("사이트에서 나온 IQ를 입력해 주세요.");
+      return;
+    }
+
+    var res;
+    try {
+      res = predict(age, iqRaw);
+    } catch (err) {
+      showError("IQ 형식을 확인해 주세요. 예: 138 또는 145이상");
+      return;
+    }
+    render(age, iqRaw, res);
+  });
+
+  // 실측 앵커 수 표시 (기준표 + 보정표 + 추가검증)
+  var baseCells = 0;
+  Object.keys(M.BASE).forEach(function (a) { baseCells += M.BASE[a].length; });
+  var total = baseCells + M.GAP.length + M.EXTRA.length;
+  badge.textContent = "실측 " + total + "칸 기반";
+})();
+</script>
+</body>
+</html>
